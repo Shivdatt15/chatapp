@@ -1,0 +1,26 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+.custom-scrollbar::-webkit-scrollbar {
+    height: 8px !important;
+    width: 8px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+    background-color: #ffffff3b;
+    }
+
+/*
+    .bg-panel-header-background{
+        background-color:  rgba(67, 83, 113, 0.671);
+    backdrop-filter: blur(19 px) saturate (180%);
+    }    
+    
+    .bg-conversation-panel-background{
+        background-color:   rgba(67, 83, 113, 0.671);
+
+        backdrop-filter: blur(19 px) saturate (180%);
+    }
+
+   */ 
