@@ -20,20 +20,17 @@ function ChatList() {
 
 
   return (
-     <div className="bg-panel-header-background flex flex-col max-h-screen z-20">
-        
-      
-      {pageType === "default" && (
-       <>
-       <ChatListHeader/>
-       <SearchBar/>
-       <List/>
+<div className="bg-panel-header-background flex flex-col h-screen min-w-[280px] overflow-y-auto z-20">
+  {pageType === "default" && (
+    <>
+      <ChatListHeader />
+      <SearchBar />
+      <List />
     </>
   )}
-  {
-    pageType ==="all-contacts" && <ContactsList/>
-  }
-    </div>
+  {pageType === "all-contacts" && <ContactsList />}
+</div>
+
   );
 }
 

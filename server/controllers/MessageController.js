@@ -1,29 +1,76 @@
 import getPrismaInstance from "../utils/PrismaClient.js";
 import {renameSync} from 'fs'
-export const addMessage = async(req,res,next)=>{
-    try {
-        const prisma =getPrismaInstance();
-        const {message,from,to}=req.body;
-        const getUser = onlineUsers.get(to);
-        if(message && from && to){
-            const newMessage=await prisma.messages.create({
-                data:{
-                    message,
-                    sender:{connect:{id: parseInt(from)}},
-                    reciever:{connect:{id: parseInt(to)}},
-                    messageStatus:getUser ? "delivered" : "sent",
-                },
-                include:{ sender:true,reciever:true},
-            });
-            return res.status(201).send({message: newMessage});
-        }
-        return res.status(400).send("From,to and Message is required.");
-    }
-    catch(err){
-        next(err);
-    }
-};
+import { generateGeminiReply } from "../utils/sendToGemini.js";
 
+
+export const addMessage = async (req, res, next) => {
+  try {
+    const prisma = getPrismaInstance();
+    const { message, from, to } = req.body;
+    const getUser = global.onlineUsers.get(to); // use global here
+
+    if (message && from && to) {
+      // Save original message
+      const newMessage = await prisma.messages.create({
+        data: {
+          message,
+          sender: { connect: { id: parseInt(from) } },
+          reciever: { connect: { id: parseInt(to) } },
+          messageStatus: getUser ? "delivered" : "sent",
+        },
+        include: { sender: true, reciever: true },
+      });
+
+      // Emit original message delivery if recipient online
+      const recipientSocketId = global.onlineUsers.get(parseInt(to));
+      if (recipientSocketId) {
+        req.app.get("io").to(recipientSocketId).emit("receive-message", {
+          message: newMessage,
+        });
+      }
+
+      // If chatting with AI bot userId 11
+      if (parseInt(to) === 11) {
+        // Emit "typing" event to sender
+        const senderSocketId = global.onlineUsers.get(parseInt(from));
+        if (senderSocketId) {
+          req.app.get("io").to(senderSocketId).emit("typing", { from: 11 });
+        }
+
+        // Delay 1.5 sec then generate and send AI reply
+        setTimeout(async () => {
+          try {
+            const aiReply = await generateGeminiReply(message);
+
+            const aiMessage = await prisma.messages.create({
+              data: {
+                message: aiReply,
+                sender: { connect: { id: 11 } },
+                reciever: { connect: { id: parseInt(from) } },
+                messageStatus: "delivered",
+              },
+              include: { sender: true, reciever: true },
+            });
+
+            if (senderSocketId) {
+              req.app.get("io").to(senderSocketId).emit("receive-message", {
+                message: aiMessage,
+              });
+            }
+          } catch (error) {
+            console.error("Error generating AI reply:", error);
+          }
+        }, 1500);
+      }
+
+      return res.status(201).send({ message: newMessage });
+    }
+
+    return res.status(400).send("From, to and Message is required.");
+  } catch (err) {
+    next(err);
+  }
+};
 
 export const getMessages = async (req, res, next) => {
     try {

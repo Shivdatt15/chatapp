@@ -81,32 +81,89 @@ function MessageBar() {
    const handleEmojiClick=(emoji)=>{
      setMessage((prevMessage)=>(prevMessage += emoji.emoji));
    }
+const getLastBotHistory = (userId = "default") => {
+  const all = JSON.parse(localStorage.getItem(`botHistory_${userId}`)) || [];
+  return all.slice(-5);
+};
+
+const saveBotHistory = (role, content, userId = "default") => {
+  const key = `botHistory_${userId}`;
+  const history = JSON.parse(localStorage.getItem(key)) || [];
+  history.push({ role, content });
+  localStorage.setItem(key, JSON.stringify(history.slice(-5)));
+};
 
 
-   const sendMessage = async()=>{
-    try {
-      const {data} = await axios.post(ADD_MESSAGE_ROUTE, {
-        to: currentChatUser?.id,
-        from: userInfo?.id,
-        message,
+ const sendMessage = async () => {
+  try {
+    const { data } = await axios.post(ADD_MESSAGE_ROUTE, {
+      to: currentChatUser?.id,
+      from: userInfo?.id,
+      message,
+    });
+
+    socket.current.emit("send-msg", {
+      to: currentChatUser?.id,
+      from: userInfo?.id,
+      message: data.message,
+    });
+
+    dispatch({
+      type: reducerCases.ADD_MESSSAGE,
+      newMessage: {
+        ...data.message,
+      },
+      fromSelf: true,
+    });
+
+    setMessage("");
+
+    if (currentChatUser.email === "aibot@gmail.com") {
+      // Get last 5 messages for context
+      const history = getLastBotHistory(currentChatUser?.id);
+
+      // Save user message in history
+      saveBotHistory("user", data.message.message, currentChatUser?.id);
+
+      // Send user message + history to AI backend
+      const aiResponse = await axios.post("http://localhost:5000/api/ai/reply", {
+        message: data.message.message,
+        userName: userInfo?.name || "User",
+        history,
       });
-      socket.current.emit("send-msg",{
-         to: currentChatUser?.id,
-         from: userInfo?.id,
-         message: data.message,
+
+      const botReply = aiResponse.data.reply;
+
+      // Save bot reply in history
+      saveBotHistory("bot", botReply, currentChatUser?.id);
+
+      // Save bot reply message in your DB/backend chat message system
+      const { data: botData } = await axios.post(ADD_MESSAGE_ROUTE, {
+        to: userInfo?.id,
+        from: currentChatUser?.id,
+        message: botReply,
       });
+
+      socket.current.emit("send-msg", {
+        to: userInfo?.id,
+        from: currentChatUser?.id,
+        message: botData.message,
+      });
+
       dispatch({
         type: reducerCases.ADD_MESSSAGE,
-        newMessage:{
-          ...data.message,
+        newMessage: {
+          ...botData.message,
         },
-        fromSelf:true,
+        fromSelf: false,
       });
-      setMessage("");
-      } catch (err) {
-       console.log(err);
-      }
-  };
+    }
+  } catch (err) {
+    console.log(err);
+  }
+};
+
+
 
   useEffect(()=>{
        if(grabPhoto)  {
@@ -163,7 +220,7 @@ function MessageBar() {
             onClick={sendMessage}  title="Send message"    
             />
           ) : (
-            <FaMicrophone I
+            <FaMicrophone 
             className="text-white panel-header-icon cursor-pointer text-xl"
             title="Record"
             onClick={()=> setShowAudioRecorder(true)}

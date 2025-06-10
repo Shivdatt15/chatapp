@@ -18,7 +18,7 @@ y: 0,
 const [isContextMenuVisible, setIsContextMenuVisible] = useState(false);
 const showContextMenu = (e) => {
 e.preventDefault();
-setContextMenuCordinates ({ x: e.pagex, y: e.pageY });
+setContextMenuCordinates ({ x: e.pageX, y: e.pageY });
 setIsContextMenuVisible(true);
 };
 const contextMenuOptions = [

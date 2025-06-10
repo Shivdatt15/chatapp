@@ -138,19 +138,21 @@ onlineUsers,
       ) }
      {!videoCall && !voiceCall && (
 
-       <div className="grid grid-cols-main h-screen w-screen max-h-screen max-w-full over">
-       <ChatList/>
-       {
-         currentChatUser ? (
-           <div className={messagesSearch ? "grid grid-cols-2" : "grid-cols-2"}>
-           <Chat/> 
-           { messagesSearch && <SearchMessages/>  }
-          </div>
-           ) : (
-             <Empty/>
-       )}
-       
-     </div>
+      <div className="grid grid-cols-[minmax(280px,30%)_1fr] h-screen w-screen max-h-screen max-w-full overflow-hidden">
+  <ChatList />
+  {
+    currentChatUser ? (
+      <div className={messagesSearch ? "grid grid-cols-2" : "grid-cols-1"}>
+        <Chat />
+        {messagesSearch && <SearchMessages />}
+      </div>
+    ) : (
+      <Empty />
+    )
+  }
+</div>
+
+
           )}
   </>
   );

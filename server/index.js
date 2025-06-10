@@ -1,13 +1,12 @@
-
-
-
-
 import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
 import AuthRoutes from "./routes/AuthRoutes.js";
 import MessageRoutes from "./routes/MessageRoutes.js";
 import { Server } from "socket.io";
+import AiRoutes from "./routes/AiRoutes.js";
+
+
 
 dotenv.config();
 const app= express();
@@ -19,6 +18,7 @@ app.use("/uploads/recordings", express.static("uploads/recordings"));
 app.use("/uploads/images", express.static("uploads/images"));
 
 
+app.use("/api/ai", AiRoutes);
 app.use("/api/auth",AuthRoutes);
 app.use("/api/messages",MessageRoutes);
 
@@ -31,6 +31,8 @@ const io= new Server(server,{
         origin:"http://localhost:3000",
     },
 });
+app.set("io", io);
+
 
 global.onlineUsers =new Map();
 io.on("connection",(socket)=>{
