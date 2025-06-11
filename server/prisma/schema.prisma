@@ -20,14 +20,19 @@ model User {
   recievedMessages Messages[] @relation("recievedMessages")
 }
 
-model Messages{
-  id Int @id @default (autoincrement())
-  sender User @relation("sentMessages",fields:[senderId],references:[id])
-  senderId Int
-  reciever User @relation("recievedMessages",fields:[recieverId],references:[id])
-  recieverId Int
-  type String @default("text")
-  message String
-  messageStatus String @default("sent")
-  createdAt DateTime @default(now())
+model Messages {
+  id             Int      @id @default(autoincrement())
+  sender         User     @relation("sentMessages", fields: [senderId], references: [id])
+  senderId       Int
+  reciever       User     @relation("recievedMessages", fields: [recieverId], references: [id])
+  recieverId     Int
+  type           String   @default("text") // text | image | video | pdf | audio | other
+  message        String
+  fileUrl        String?  // Optional: stores URL or path of the uploaded file
+  fileName       String?  // Optional: original name of the uploaded file
+  fileType       String?  // Optional: MIME type like image/png, video/mp4, etc.
+  fileSize       Int?     // ✅ Newly added: size in bytes
+  messageStatus  String   @default("sent")
+  createdAt      DateTime @default(now())
 }
+
