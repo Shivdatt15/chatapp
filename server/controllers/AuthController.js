@@ -73,7 +73,7 @@ export const getAllUsers = async (req, res, next) => {
          const userId = req.params.userId;
          const effectiveTime =3600;
          const payload = "";
-         console.log({appId, serverSecret, userId});
+         //console.log({appId, serverSecret, userId});
          if(appId && serverSecret && userId){
             const token = await generateToken04(appId,userId,serverSecret,effectiveTime,payload);
            return res.status(200).json({token});

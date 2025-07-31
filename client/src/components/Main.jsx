@@ -63,14 +63,45 @@ function Main() {
 
       useEffect(()=>{
         if(socket.current && !socketEvent) {
-          socket.current.on("msg-receive", (data) => {
-          dispatch({
-             type: reducerCases.ADD_MESSSAGE,
-             newMessage:{
-              ...data.message,
-             },
-            });
-          });
+      socket.current.on("receive-message", ({ message }) => {
+  const isCurrentChat =
+    currentChatUser && message.senderId === currentChatUser.id;
+
+  dispatch({
+    type: reducerCases.ADD_MESSSAGE,
+    newMessage: message,
+  });
+
+  // ✅ Update contact preview and unread count if NOT in current chat
+  if (!isCurrentChat) {
+    dispatch({
+      type: reducerCases.INCREMENT_UNREAD_COUNT,
+      payload: { contactId: message.senderId },
+    });
+
+    dispatch({
+      type: reducerCases.UPDATE_CONTACT_LAST_MESSAGE,
+      payload: {
+        contactId: message.senderId,
+        message,
+      },
+    });
+  }
+});
+
+socket.current.on("message-status-updated", ({ messageIds, status, contactId }) => {
+  dispatch({
+    type: reducerCases.UPDATE_MULTIPLE_MESSAGE_STATUSES,
+    payload: { messageIds, status },
+  });
+
+  if (contactId) {
+    dispatch({
+      type: reducerCases.UPDATE_CONTACT_UNREAD_COUNT,
+      payload: { contactId },
+    });
+  }
+});
 
           socket.current.on("incoming-voice-call", ({ from, roomId, callType })=>{
            dispatch({

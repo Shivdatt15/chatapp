@@ -19,14 +19,52 @@ const VoiceMessage = dynamic(() => import("./VoiceMessage"), { ssr: false });
 
 
 function ChatContainer() {
-  const [{ messages, currentChatUser, userInfo }] = useStateProvider();
+const [{ messages, currentChatUser, userInfo, socket }] = useStateProvider();
   const scrollRef = useRef(null);
 
-  useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+  const lastMessageRef = useRef(null);
+
+useEffect(() => {
+  if (
+    messages.length &&
+    socket?.current &&
+    currentChatUser &&
+    userInfo
+  ) {
+    const unreadMessages = messages.filter(
+      (msg) =>
+        msg.senderId === currentChatUser.id && msg.messageStatus !== "read"
+    );
+
+   if (unreadMessages.length) {
+  socket.current.emit("mark-as-read", {
+    messageIds: unreadMessages.map((m) => m.id),
+    senderId: currentChatUser.id,    // person who sent the unread messages
+    receiverId: userInfo.id,         // person who is reading them (you)
+  });
+}
+
+  }
+  
+}, [messages, currentChatUser, socket, userInfo]);
+
+// ✅ Add this as a separate useEffect below
+useEffect(() => {
+  const scrollToBottom = () => {
+    if (lastMessageRef.current) {
+      lastMessageRef.current.scrollIntoView({
+        behavior: "auto",
+        block: "end",
+      });
     }
-  }, [messages]);
+  };
+
+  const timeoutId = setTimeout(() => {
+    requestAnimationFrame(scrollToBottom);
+  }, 100);
+
+  return () => clearTimeout(timeoutId);
+}, [messages]);
 
   const isImageFile = (fileType) =>
     fileType && fileType.startsWith("image/");
@@ -51,7 +89,7 @@ const isZipFile = (fileType) =>
 
   return (
     <div
-      className="h-[80vh] w-full relative flex-grow overflow-auto custom-scrollbar"
+      className="h-[80vh] w-full relative flex-grow overflow-auto custom-scrollbar scroll-smooth"
       ref={scrollRef}
     >
       <div className="bg-fixed h-full w-full opacity-5 fixed left-0 top-0 z-0 pointer-events-none"></div>
@@ -59,15 +97,18 @@ const isZipFile = (fileType) =>
         <div className="flex w-full">
           <div className="flex flex-col justify-end w-full gap-1 overflow-auto custom-scrollbar"
           >
-            {messages.map((message) => (
-              <div
-                key={message.id}
-                className={`flex ${
-                  message.senderId === currentChatUser.id
-                    ? "justify-start"
-                    : "justify-end"
-                }`}
-              >
+            {messages.map((message, index) => {
+  const isLast = index === messages.length - 1;
+  return (
+    <div
+      key={message.id}
+      ref={isLast ? lastMessageRef : null} // ✅ Attach ref to last message
+      className={`flex ${
+        message.senderId === currentChatUser.id
+          ? "justify-start"
+          : "justify-end"
+      }`}
+    >
                 {/* Text Message */}
                 {message.type === "text" && (
                   <div
@@ -249,7 +290,8 @@ const isZipFile = (fileType) =>
                   <VoiceMessage message={message} />
                 )}
               </div>
-            ))}
+           );
+            })}
           </div>
         </div>
       </div>

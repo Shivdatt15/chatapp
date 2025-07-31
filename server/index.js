@@ -6,6 +6,7 @@ import AuthRoutes from "./routes/AuthRoutes.js";
 import MessageRoutes from "./routes/MessageRoutes.js";
 import AiRoutes from "./routes/AiRoutes.js";
 import FileMessageRoutes from "./routes/FileMessageRoutes.js"; // ✅ ADD THIS
+import getPrismaInstance from "./utils/PrismaClient.js";
 
 
 dotenv.config();
@@ -107,4 +108,25 @@ io.on("connection", (socket) => {
       socket.to(sendUserSocket).emit("accept-call");
     }
   });
+
+    socket.on("mark-as-read", async ({ messageIds, senderId, receiverId }) => {
+  if (!messageIds?.length) return;
+
+  const prisma = getPrismaInstance();
+
+  await prisma.messages.updateMany({
+    where: { id: { in: messageIds } },
+    data: { messageStatus: "read" },
+  });
+
+  const senderSocketId = global.onlineUsers.get(parseInt(senderId));
+  if (senderSocketId) {
+    io.to(senderSocketId).emit("message-status-updated", {
+      messageIds,
+      status: "read",
+      contactId: parseInt(receiverId), // ✅ Required for updating contact list
+    });
+  }
+});
+
 });

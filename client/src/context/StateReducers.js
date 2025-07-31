@@ -110,7 +110,58 @@ const reducer =(state,action)=>{
                                               videoCall: undefined,
                                               incomingVideoCall: undefined,
                                               incomingVoiceCall: undefined,
-                                              };      
+                                              };  
+                                              case reducerCases.UPDATE_MULTIPLE_MESSAGE_STATUSES:
+  return {
+    ...state,
+    messages: state.messages.map((msg) =>
+      action.payload.messageIds.includes(msg.id)
+        ? { ...msg, messageStatus: action.payload.status }
+        : msg
+    ),
+  };
+  case reducerCases.UPDATE_CONTACT_UNREAD_COUNT:
+  return {
+    ...state,
+    userContacts: state.userContacts.map((contact) =>
+      contact.id === action.payload.contactId
+        ? { ...contact, totalUnreadMessages: 0 }
+        : contact
+    ),
+  };
+
+  case reducerCases.INCREMENT_UNREAD_COUNT:
+  return {
+    ...state,
+    userContacts: state.userContacts.map((contact) =>
+      contact.id === action.payload.contactId
+        ? {
+            ...contact,
+            totalUnreadMessages: contact.totalUnreadMessages + 1,
+          }
+        : contact
+    ),
+  };
+ 
+  case reducerCases.UPDATE_CONTACT_LAST_MESSAGE:
+  return {
+    ...state,
+    userContacts: state.userContacts.map((contact) =>
+      contact.id === action.payload.contactId
+        ? {
+            ...contact,
+            message: action.payload.message.message,
+            type: action.payload.message.type,
+            messageStatus: action.payload.message.messageStatus,
+            createdAt: action.payload.message.createdAt,
+            senderId: action.payload.message.senderId,
+            recieverId: action.payload.message.recieverId,
+            messageId: action.payload.message.id,
+          }
+        : contact
+    ),
+  };
+
                                               
                                               case reducerCases.SET_EXIT_CHAT:
                                                 return {

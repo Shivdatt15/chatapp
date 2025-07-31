@@ -10,22 +10,33 @@ function ChatLIstItem({ data, isContactsPage = false }) {
   const [{ userInfo, currentChatUser }, dispatch] = useStateProvider();
 
   const handleContactClick = () => {
-    if (!isContactsPage) {
-      dispatch({
-        type: reducerCases.CHANGE_CURRENT_CHAT_USER,
-        user: {
-          name: data.name,
-          about: data.about,
-          profilePicture: data.profilePicture,
-          email: data.email,
-          id: userInfo.id === data.senderId ? data.recieverId : data.senderId,
-        },
-      });
-    } else {
-      dispatch({ type: reducerCases.CHANGE_CURRENT_CHAT_USER, user: { ...data } });
-      dispatch({ type: reducerCases.SET_ALL_CONTACTS_PAGE });
-    }
-  };
+  if (!isContactsPage) {
+    const contactId =
+      userInfo.id === data.senderId ? data.recieverId : data.senderId;
+
+    // 1. Change the current chat user
+    dispatch({
+      type: reducerCases.CHANGE_CURRENT_CHAT_USER,
+      user: {
+        name: data.name,
+        about: data.about,
+        profilePicture: data.profilePicture,
+        email: data.email,
+        id: contactId,
+      },
+    });
+
+    // 2. Optimistically reset unread count to 0
+    dispatch({
+      type: reducerCases.UPDATE_CONTACT_UNREAD_COUNT,
+      payload: { contactId },
+    });
+  } else {
+    dispatch({ type: reducerCases.CHANGE_CURRENT_CHAT_USER, user: { ...data } });
+    dispatch({ type: reducerCases.SET_ALL_CONTACTS_PAGE });
+  }
+};
+
 
   return (
     <div
