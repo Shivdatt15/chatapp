@@ -7,10 +7,12 @@ import MessageRoutes from "./routes/MessageRoutes.js";
 import AiRoutes from "./routes/AiRoutes.js";
 import FileMessageRoutes from "./routes/FileMessageRoutes.js"; // ✅ ADD THIS
 import getPrismaInstance from "./utils/PrismaClient.js";
-
+import path from "path";
 
 dotenv.config();
 const app = express();
+
+const _dirname = path.resolve();
 
 app.use(cors());
 app.use(express.json());
@@ -23,7 +25,12 @@ app.use("/api/files", FileMessageRoutes); // ✅ THIS WORKS NOW
 app.use("/api/ai", AiRoutes);
 app.use("/api/auth", AuthRoutes);
 app.use("/api/messages", MessageRoutes);
-
+/*
+app.use(express.static(path.join(_dirname, "/client/dist")));
+app.get('*',(req,res)=>{
+  res.sendFile(path.resolve(_dirname,"client","dist","index.html"));
+})
+*/
 // Server setup
 const server = app.listen(process.env.PORT, () => {
   console.log(`Server started on port ${process.env.PORT}`);
